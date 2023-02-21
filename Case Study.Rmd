@@ -1,0 +1,257 @@
+---
+title: "Bellabeat Case Study"
+author: "Agaaz Oberoi"
+date: "2023-02-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Introduction
+
+### Ask
+
+Business Task:
+Identifying trends in non-Bellabeat smart device usage and how they could apply to Bellabeat customers, along with giving suggestions to influence the company's marketing strategy. 
+
+Key Stakeholders:
+* Urška Sršen: Bellabeat’s cofounder and Chief Creative Officer
+* Sando Mur: Bellabeat’s cofounder; key member of the Bellabeat executive team
+* Bellabeat marketing analytics team
+
+### Prepare
+
+Dataset used: <https://www.kaggle.com/datasets/arashnic/fitbit>
+
+This data set contains personal fitness tracker from thirty fitbit users. Thirty eligible Fitbit users consented to the submission of personal tracker data, including minute-level output for physical activity, heart rate, and sleep monitoring. It includes information about daily activity, steps, and heart rate that can be used to explore users’ habits.
+
+Installing and loading packages:
+
+```{r}
+
+library(dplyr)
+library(here)
+library(ggpubr)
+library(ggplot2)
+library(skimr)
+library(janitor)
+library(lubridate)
+library(tidyverse)
+```
+Loading Kaggle data and naming the dataframes:
+
+```{r}
+daily_activity <- read_csv("Bellabeat/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv")
+
+heartrate_seconds <- read_csv("Bellabeat/Fitabase Data 4.12.16-5.12.16/heartrate_seconds_merged.csv")
+
+hourly_calories <- read_csv("Bellabeat/Fitabase Data 4.12.16-5.12.16/hourlyCalories_merged.csv")
+
+hourly_steps <- read_csv("Bellabeat/Fitabase Data 4.12.16-5.12.16/hourlySteps_merged.csv")
+
+hourly_intensities <- read_csv("Bellabeat/Fitabase Data 4.12.16-5.12.16/hourlyIntensities_merged.csv")
+
+sleep_daily <- read_csv("Bellabeat/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+
+str(daily_activity)
+str(heartrate_seconds)
+str(hourly_calories)
+str(hourly_steps)
+str(hourly_intensities)
+str(sleep_daily)
+
+count(distinct(daily_activity,Id))
+count(distinct(heartrate_seconds,Id))
+count(distinct(hourly_calories,Id))
+count(distinct(hourly_steps,Id))
+count(distinct(hourly_intensities,Id))
+count(distinct(sleep_daily,Id))
+```
+
+All data frames have data from 33 users except heartrate_seconds with 14 users and sleep_daily with 24. While the sleep data can still be useful, it makes sense to leave the heart rate data out of our analysis as we have other similar forms of data(intensities and calories), just not down to the second.
+
+### Process
+
+Now let's try to make sure the data is clean by first checking for duplicates:
+
+```{r}
+anyDuplicated(daily_activity)
+anyDuplicated(hourly_calories)
+anyDuplicated(hourly_steps)
+anyDuplicated(hourly_intensities)
+anyDuplicated(sleep_daily)
+```
+Checking for cells with missing values:
+```{r}
+sum(is.na(daily_activity))
+sum(is.na(hourly_calories))
+sum(is.na(hourly_steps))
+sum(is.na(hourly_intensities))
+sum(is.na(sleep_daily))
+```
+
+
+The sleep_daily data frame has 162 duplicates, we should clean it before proceeding further.
+
+```{r}
+sleep_daily <- sleep_daily %>%
+  distinct()
+```
+
+We are likely to analyze data by date and time for this project, so let's make sure that the formatting for these columns is correct in our data frames.
+
+```{r}
+daily_activity$ActivityDate <- mdy(daily_activity$ActivityDate)
+
+hourly_calories$ActivityHour <- mdy_hms(hourly_calories$ActivityHour)
+
+hourly_steps$ActivityHour <- mdy_hms(hourly_steps$ActivityHour)
+
+hourly_intensities$ActivityHour <- mdy_hms(hourly_intensities$ActivityHour)
+
+sleep_daily$SleepDay <- mdy_hms(sleep_daily$SleepDay)
+
+```
+
+### Analyze
+
+Let's look at some summary statistics for our data frames.
+
+```{r}
+daily_activity %>%  
+  select(TotalSteps,
+         TotalDistance,
+         VeryActiveDistance,
+         ModeratelyActiveDistance,
+         LightActiveDistance,
+         SedentaryActiveDistance,
+         Calories) %>%
+  summary()
+```
+Checking the relationship between steps and calories per day:
+
+```{r}
+ggplot(data = daily_activity, mapping = aes(x = TotalSteps, y = Calories)) + geom_point() + geom_smooth() +geom_jitter() + stat_cor(label.x = 20000,label.y = 1000) + labs(title = "Daily Steps and Calories burned")
+```
+The plot as well as a positive correlation of 0.59 between steps and calories burned show us that most of the calories users burn in a day come from movement based activity.
+
+Based on the summary statistics from earlier, we can see that most of that movement is Light Active Distance (followed by Very Active Distance, but it is significantly smaller). This leads us to believe that people are taking less time out for exercising and relying on walking for daily tasks to expend calories.
+
+
+Hourly Data can provide us with useful information as well, let's summarize and analyze:
+
+```{r}
+hourly_calories$Hour <- format(hourly_calories$ActivityHour, format = "%H:%M:%S")
+hourly_calories1 <- hourly_calories
+hourly_calories1$ActivityHour <- weekdays(hourly_calories1$ActivityHour)
+hourly_calories1$ActivityHour <- factor(hourly_calories1$ActivityHour, levels = c("Sunday", "Saturday", "Friday","Thursday", "Wednesday", "Tuesday", "Monday"))
+```
+
+```{r}
+hourly_calories1 %>%
+  group_by(Hour, ActivityHour) %>%
+  ggplot(data = hourly_calories1, mapping = aes(x = Hour, y = ActivityHour, fill = Calories)) + geom_tile(color = "white" , linewidth = 0.5) + theme(axis.text.x = element_text(angle = 90)) + scale_fill_viridis_c(option = "A") +labs(y = "Day of Week" , title = "Hourly Calorie Expenditure per Day")
+
+```
+Looks like the most active periods of people's weeks are Monday and Wednesday between 3PM and 5PM, Friday 1PM to 2PM and Saturday 11AM to 1PM.
+
+
+Let's look at sleep data, this will be interesting as it is different from everything else we've seen before.
+
+```{r}
+sleep_daily %>%
+  select(TotalMinutesAsleep, TotalTimeInBed) %>%
+  summary()
+```
+We can see that the sleep time for most users is around 6 to 8 hours, with the time in bed being around 6.75 to 8.75 hours.
+
+```{r}
+time_taken_to_fall_asleep = sleep_daily$TotalTimeInBed - sleep_daily$TotalMinutesAsleep
+summary(time_taken_to_fall_asleep)
+```
+It takes most users between 17 and 40 minutes to fall asleep after the device detects that they have gotten into bed.
+
+```{r}
+sleep_daily %>%
+  group_by(Id) %>%
+  ggplot(data = sleep_daily, mapping= aes(x = time_taken_to_fall_asleep, y = TotalMinutesAsleep )) + geom_point() + stat_cor(label.x = 250 , label.y = 200) + labs(x = "Time Taken To Fall Asleep" , y = "Total Minutes Asleep")
+```
+We can't come to any meaningful conclusion due to the lack of correlation between the time it takes for someone to fall asleep is not a good predictor of how long they are asleep for. 
+
+
+```{r}
+sleep_daily1 <- sleep_daily
+
+sleep_daily1$SleepDay <- weekdays(sleep_daily1$SleepDay)
+sleep_daily1$SleepDay <- factor(sleep_daily1$SleepDay, levels = c("Monday", "Tuesday", "Wednesday","Thursday", "Friday", "Saturday", "Sunday"))
+
+```
+
+Sleep Time per Weekday:
+
+```{r}
+sleep_daily1 %>% 
+  group_by(SleepDay) %>% 
+  summarise(avg_sleep_duration = mean(TotalMinutesAsleep)/60) %>% 
+  ggplot(mapping = aes(x= SleepDay, y = avg_sleep_duration)) +
+  geom_col() + labs(title = "Sleep Duration per Weekday", x = "Day" , y = "Hours")
+```
+Sleep per weekday seems to be relatively evenly distributed, with most users getting more sleep on Wednesday and Sunday.
+
+
+```{r}
+rename(sleep_daily, ActivityDate = SleepDay)
+```
+
+```{r}
+daily_data = merge(daily_activity, sleep_daily , all = FALSE)
+```
+
+```{r}
+  ggplot(data = daily_data, mapping = aes( x = TotalMinutesAsleep , y = Calories)) + geom_smooth()
+```
+There is a lot to unpack here:
+
+1. Sleep duration affects daily activity (when measured in  the form of calories burned). The group that burns the most calories sleeps around 6.5 to 8 hours.
+
+2. The graph starts off pretty high - it is highly unlikely for people sleeping > 2 hours to have enough energy to burn more calories than people who get more rest. After manually inspecting the data, it looks like for some users the data is the same every day, and it's often a small amount ranging from 1 to 2 hours. The fitness tracker might not be tracking sleep data properly for everyone. The inverted sleep parabola at the start of the graph is another indicator of this.
+
+### Insights and Suggestions
+
+#### 1. Collect Data from Bellabeat users as well
+
+The data set we analyzed was useful, but Bellabeat's consumers are mainly female and we could definitely benefit from also using internal data from the company to get a better idea of how their data moves with fluctuations in external data from the market.
+
+Also, the lack of usable weight data meant that we were lacking an important factor in our analysis. Weight influences calories burned, and calories burned is a better indicator of physical activity than steps as it also includes strength training. 
+
+Bellabeat also has products that track female-specific health data like the menstrual cycle, another important factor which can influence and improve this analysis.
+
+### 2. Brand Image
+
+We saw a correlation of almost 0.6 between daily steps and daily calorie expenditure. While it is strong enough to justify a focus on accurate step tracking, losing out on strength-training metrics can lead to ignoring a big chunk of the market.
+
+Bellabeat's product lineup has a heavy focus on women's wellness and health, but it does not advertise its exercise tracking capabilities beyond mentioning the existence of those capabilities. They already have exercise specific accessories for their products, so it'll be beneficial to advertise to the market segment of females that consider themselves fitness enthusiasts. 
+
+In a way, this is expanding to take a chunk out of Fitbit's fitness focused market while not losing brand identity.
+
+### 3. Lack of Movement
+
+The daily activity data summary shows us that only 25% of users get over 10,000 steps per day. Innovative strategies like time-bound competitions (Strava does monthly and weekly challenges) as well as education-based positive reinforcement to show people the impact of good cardiovascular health can be implemented.
+
+### 4. Two sides of the equation
+
+Something that not just Bellabeat, but also other major fitness tracker apps lack, is calorie intake. Calories burned is a great way of showing exercises performed and energy expenditure, but allowing users to get a better understanding of nutrition while also gaining a first-mover advantage in this field. 
+
+Other fitness trackers already partner with apps like MyFitnessPal & Loseit, but allowing users to see both sides of the equation (calories in vs calories burned) on the same platform will be a big advantage.
+
+### 5. Sleep
+
+A median sleep duration of 7 hours suggests that nearly half of the users are not getting the recommended 7 to 9 hours of sleep as suggested by the [National Institute of Aging](https://www.nia.nih.gov/health/good-nights-sleep). 
+
+The institute also suggests that an adult should be asleep within 20 minutes of getting into bed, but the data shows that over 50% of users spend an extended amount of time in bed. Collecting further data on when the excess time in bed is spent (before sleeping or after waking up) as well as bedtimes and bedtime consistency can help more with our analysis. Based on the data analyzed, Bellabeat can help create a sleep "nudge" via haptic feedback, urging users to start their bedtime routine the same time every day. Bellabeat already provides sleep metrics, the nudge can help users pay more attention to it.
+
+### 6. Mental Health
+
+According to a study in the [Journal of Psychiatry and Neuroscience](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4478054/) , depression is almost twice as prevalent in women when compared to women. Women in general are also more attentive to their emotional and mental well-being. Reinforcing the mental health benefits of physical activity and a healthy sleep schedule for Bellabeat users can lead to a users feeling better about themselves when using their fitness trackers.
