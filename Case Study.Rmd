@@ -13,10 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Ask
 
-Business Task:
+#### Business Task:
 Identifying trends in non-Bellabeat smart device usage and how they could apply to Bellabeat customers, along with giving suggestions to influence the company's marketing strategy. 
 
-Key Stakeholders:
+#### Key Stakeholders:
+
 * Urška Sršen: Bellabeat’s cofounder and Chief Creative Officer
 * Sando Mur: Bellabeat’s cofounder; key member of the Bellabeat executive team
 * Bellabeat marketing analytics team
@@ -40,6 +41,7 @@ library(janitor)
 library(lubridate)
 library(tidyverse)
 ```
+
 Loading Kaggle data and naming the dataframes:
 
 ```{r}
@@ -228,7 +230,7 @@ Also, the lack of usable weight data meant that we were lacking an important fac
 
 Bellabeat also has products that track female-specific health data like the menstrual cycle, another important factor which can influence and improve this analysis.
 
-### 2. Brand Image
+#### 2. Brand Image
 
 We saw a correlation of almost 0.6 between daily steps and daily calorie expenditure. While it is strong enough to justify a focus on accurate step tracking, losing out on strength-training metrics can lead to ignoring a big chunk of the market.
 
@@ -236,22 +238,22 @@ Bellabeat's product lineup has a heavy focus on women's wellness and health, but
 
 In a way, this is expanding to take a chunk out of Fitbit's fitness focused market while not losing brand identity.
 
-### 3. Lack of Movement
+#### 3. Lack of Movement
 
 The daily activity data summary shows us that only 25% of users get over 10,000 steps per day. Innovative strategies like time-bound competitions (Strava does monthly and weekly challenges) as well as education-based positive reinforcement to show people the impact of good cardiovascular health can be implemented.
 
-### 4. Two sides of the equation
+#### 4. Two sides of the equation
 
 Something that not just Bellabeat, but also other major fitness tracker apps lack, is calorie intake. Calories burned is a great way of showing exercises performed and energy expenditure, but allowing users to get a better understanding of nutrition while also gaining a first-mover advantage in this field. 
 
 Other fitness trackers already partner with apps like MyFitnessPal & Loseit, but allowing users to see both sides of the equation (calories in vs calories burned) on the same platform will be a big advantage.
 
-### 5. Sleep
+#### 5. Sleep
 
 A median sleep duration of 7 hours suggests that nearly half of the users are not getting the recommended 7 to 9 hours of sleep as suggested by the [National Institute of Aging](https://www.nia.nih.gov/health/good-nights-sleep). 
 
 The institute also suggests that an adult should be asleep within 20 minutes of getting into bed, but the data shows that over 50% of users spend an extended amount of time in bed. Collecting further data on when the excess time in bed is spent (before sleeping or after waking up) as well as bedtimes and bedtime consistency can help more with our analysis. Based on the data analyzed, Bellabeat can help create a sleep "nudge" via haptic feedback, urging users to start their bedtime routine the same time every day. Bellabeat already provides sleep metrics, the nudge can help users pay more attention to it.
 
-### 6. Mental Health
+#### 6. Mental Health
 
 According to a study in the [Journal of Psychiatry and Neuroscience](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4478054/) , depression is almost twice as prevalent in women when compared to women. Women in general are also more attentive to their emotional and mental well-being. Reinforcing the mental health benefits of physical activity and a healthy sleep schedule for Bellabeat users can lead to a users feeling better about themselves when using their fitness trackers.
